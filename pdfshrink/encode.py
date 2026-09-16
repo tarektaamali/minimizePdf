@@ -5,16 +5,23 @@ optional: without it, bilevel documents fall back to the raster path and
 simply compress less well.
 """
 
+import io
 import os
 import shutil
 import subprocess
 
 import numpy as np
 import pikepdf
-from PIL import Image
+from PIL import Image, TiffImagePlugin
 from pikepdf import Dictionary, Name
 
 JBIG2 = "jbig2"
+
+# Pillow splits a TIFF into strips once it exceeds this many bytes. A PDF
+# CCITTFaxDecode stream must be one continuous G4 stream for the whole
+# image, so strips are disabled outright: a partial strip decodes into a
+# smaller file that looks entirely plausible and is silently corrupt.
+TiffImagePlugin.STRIP_SIZE = 2 ** 28
 
 # A double-clicked launcher does not always inherit a shell PATH that
 # includes Homebrew, and silently losing JBIG2 means silently losing most
@@ -39,6 +46,39 @@ def have_jbig2():
 
 def write_pbm(arr, path):
     Image.fromarray(np.where(arr, 0, 255).astype(np.uint8)).convert("1").save(path)
+
+
+def g4_encode(arr):
+    """CCITT group 4 bytes for a 1 = ink array, as a single strip."""
+    image = Image.fromarray(np.where(arr, 0, 255).astype(np.uint8)).convert("1")
+    buf = io.BytesIO()
+    image.save(buf, format="TIFF", compression="group4")
+    tif = Image.open(io.BytesIO(buf.getvalue()))
+    offsets, counts = tif.tag_v2[273], tif.tag_v2[279]
+    if len(offsets) != 1:
+        raise ValueError("expected a single TIFF strip, got %d" % len(offsets))
+    return buf.getvalue()[offsets[0]:offsets[0] + counts[0]]
+
+
+def build_g4_pdf(pages, dst, pts):
+    """Assemble CCITT G4 streams into a PDF.
+
+    pages is a list of (g4_bytes, width, height). BlackIs1 is true because
+    Pillow codes black as 1; false silently inverts every page.
+    """
+    pdf = pikepdf.new()
+    for data, w, h in pages:
+        img = pdf.make_stream(data)
+        img.Type = Name.XObject
+        img.Subtype = Name.Image
+        img.Width = w
+        img.Height = h
+        img.ColorSpace = Name.DeviceGray
+        img.BitsPerComponent = 1
+        img.Filter = Name.CCITTFaxDecode
+        img.DecodeParms = Dictionary(K=-1, Columns=w, Rows=h, BlackIs1=True)
+        _place(pdf, img, pts)
+    return _save(pdf, dst)
 
 
 def jbig2_encode(pbm_paths, workdir, symthr):
