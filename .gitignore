@@ -10,6 +10,8 @@ dist/
 BA2.pdf
 *.scan.pdf
 
-# Extracted by Installer.bat
+# Extracted by Installer.bat - the uv archive holds all three
 uv.exe
+uvw.exe
+uvx.exe
 uv.zip
