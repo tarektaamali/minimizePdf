@@ -45,6 +45,11 @@ BILEVEL_LADDER = [
 RASTER_LADDER = [(300, 80), (250, 75), (200, 70), (150, 65), (120, 60),
                  (100, 55), (85, 50), (72, 45)]
 
+# A fallback size is only worth offering if it is meaningfully smaller than
+# what he already has. Without this, a raster floor above the input size is
+# offered as an improvement.
+MIN_SAVING = 0.10
+
 # scale, blur, binary threshold, speck size. No symbol-match threshold:
 # G4 has no lossy parameter to tune, so only resolution varies. Scales
 # mirror BILEVEL_LADDER and reach 300/200/150/120/100 dpi from a 300 dpi
@@ -231,6 +236,13 @@ def _shrink_digital(src, dst, target, profile):
                   reason="digital_floor", attempts=[(None, None, size)])
 
 
+def _offerable(best_safe_size, before):
+    """Is this fallback size worth showing him at all?"""
+    if best_safe_size is None or before <= 0:
+        return False
+    return best_safe_size <= before * (1.0 - MIN_SAVING)
+
+
 def shrink(src, dst, target, min_dpi=100, progress=None):
     _notify(progress, "inspect")
     profile = inspect(src)
@@ -247,4 +259,9 @@ def shrink(src, dst, target, min_dpi=100, progress=None):
         result = _shrink_raster(src, dst, target, profile, min_dpi, progress)
 
     result.before = before
+    if (not result.ok and result.reason == "too_large"
+            and not _offerable(result.best_safe_size, before)):
+        result.best_safe_size = None
+        result.best_safe_dpi = None
+        result.reason = "already_minimal"
     return result

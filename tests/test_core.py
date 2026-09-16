@@ -152,3 +152,48 @@ def test_ba2_g4_meets_a_reachable_target(ba2, tmp_path):
     assert result.dpi == 150
     assert result.size <= 900 * 1024
     assert os.path.getsize(dst) == result.size
+
+
+def test_offerable_rejects_a_result_that_is_not_smaller():
+    from pdfshrink.core import _offerable
+    assert _offerable(100 * 1024, 200 * 1024) is True
+    assert _offerable(3918342, 197231) is False     # the measured defect
+    assert _offerable(190 * 1024, 200 * 1024) is False   # only 5% saved
+    assert _offerable(None, 200 * 1024) is False
+    assert _offerable(100 * 1024, 0) is False
+
+
+def test_refusal_withholds_a_useless_fallback_size(colour_scan_pdf, tmp_path,
+                                                   monkeypatch):
+    """A refusal that offers a bigger file is worse than a plain refusal."""
+    import pdfshrink.core as core
+    from pdfshrink.core import Result
+
+    def huge(src, dst, target, profile, min_dpi, progress):
+        return Result(False, 0, profile, best_safe_size=3918342,
+                      best_safe_dpi=100, reason="too_large",
+                      attempts=[(100, 55, 3918342)])
+
+    monkeypatch.setattr(core, "_shrink_raster", huge)
+    result = core.shrink(colour_scan_pdf, str(tmp_path / "o.pdf"), target=1024)
+    assert result.ok is False
+    assert result.reason == "already_minimal"
+    assert result.best_safe_size is None
+    assert result.best_safe_dpi is None
+
+
+def test_refusal_keeps_a_genuinely_useful_fallback_size(colour_scan_pdf,
+                                                        tmp_path, monkeypatch):
+    import pdfshrink.core as core
+    from pdfshrink.core import Result
+
+    before = os.path.getsize(colour_scan_pdf)
+
+    def helpful(src, dst, target, profile, min_dpi, progress):
+        return Result(False, 0, profile, best_safe_size=int(before * 0.5),
+                      best_safe_dpi=100, reason="too_large", attempts=[])
+
+    monkeypatch.setattr(core, "_shrink_raster", helpful)
+    result = core.shrink(colour_scan_pdf, str(tmp_path / "o.pdf"), target=1024)
+    assert result.reason == "too_large"
+    assert result.best_safe_size == int(before * 0.5)
