@@ -21,3 +21,6 @@ jbig2/
 
 # Written by the server
 journal.txt
+
+# Built by scripts/package.py
+dist/
