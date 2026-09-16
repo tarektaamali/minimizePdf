@@ -28,14 +28,31 @@ TiffImagePlugin.STRIP_SIZE = 2 ** 28
 # of the compression, so look in the usual places too.
 _EXTRA_PATHS = ("/opt/homebrew/bin", "/usr/local/bin")
 
+# Where the Windows installer puts the encoder: a jbig2 folder beside the
+# application, holding jbig2.exe and the DLLs it links against. Windows
+# resolves those DLLs from the executable's own directory, so they must
+# stay together.
+APP_DIRS = (
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                 "jbig2"),
+)
+
+
+def _executable(folder):
+    for name in (JBIG2, JBIG2 + ".exe"):
+        candidate = os.path.join(folder, name)
+        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+    return None
+
 
 def jbig2_path():
     found = shutil.which(JBIG2)
     if found:
         return found
-    for folder in _EXTRA_PATHS:
-        candidate = os.path.join(folder, JBIG2)
-        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+    for folder in tuple(APP_DIRS) + _EXTRA_PATHS:
+        candidate = _executable(folder)
+        if candidate:
             return candidate
     return None
 

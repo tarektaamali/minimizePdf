@@ -36,6 +36,18 @@ echo   Installation des composants...
 "%UV%" pip install --python "%APP%.venv\Scripts\python.exe" -r "%APP%requirements.txt"
 if errorlevel 1 goto failed
 
+echo   Installation du compresseur JBIG2...
+rem Optional by design: without it long scans are refused rather than
+rem badly compressed, so a failure here warns and carries on.
+".venv\Scripts\python.exe" "%APP%scripts\fetch_jbig2.py" "%APP%jbig2"
+if errorlevel 1 (
+  echo.
+  echo   ATTENTION : le compresseur JBIG2 n a pas pu etre installe.
+  echo   Le programme fonctionnera, mais les documents longs ne
+  echo   pourront pas etre reduits autant.
+  echo.
+)
+
 echo   Verification...
 pushd "%APP%"
 ".venv\Scripts\python.exe" verify_install.py

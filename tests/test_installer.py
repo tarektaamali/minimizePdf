@@ -127,3 +127,34 @@ def test_batch_files_force_utf8_output():
     for name in ("Installer.bat", "Réduire PDF.bat"):
         text = (ROOT / name).read_text(encoding="utf8")
         assert "PYTHONUTF8=1" in text, "%s does not force UTF-8" % name
+
+
+@windows_only
+def test_batch_files_contain_no_stray_control_characters():
+    """A form feed once crept into a path here and turned
+    scripts\fetch_jbig2.py into scripts<FF>etch_jbig2.py. It is invisible
+    in ordinary output and the file still looks correct."""
+    for name in ("Installer.bat", "Réduire PDF.bat"):
+        data = (ROOT / name).read_bytes()
+        stray = sorted({b for b in data if b < 0x20 and b not in (0x09, 0x0A, 0x0D)})
+        assert not stray, "%s contains control bytes %s" % (
+            name, [hex(b) for b in stray])
+
+
+@windows_only
+def test_installer_fetches_the_jbig2_encoder():
+    text = (ROOT / "Installer.bat").read_text(encoding="utf8")
+    assert "fetch_jbig2.py" in text
+    # Optional by design: a failure must warn, never abort the install.
+    # Read only the `if errorlevel 1 ( ... )` block that follows the call,
+    # not whatever comes after it.
+    fetch_at = text.index("fetch_jbig2.py")
+    block = text[fetch_at:text.index("\n)", fetch_at)]
+    assert "ATTENTION" in block, "a jbig2 failure must warn"
+    assert "goto failed" not in block, "a jbig2 failure must not abort"
+
+
+def test_zstandard_is_pinned_for_conda_extraction():
+    """Python 3.12, which the installer pins, has no built-in zstd."""
+    text = (ROOT / "requirements.txt").read_text(encoding="utf8")
+    assert "zstandard==" in text

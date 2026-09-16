@@ -15,3 +15,6 @@ uv.exe
 uvw.exe
 uvx.exe
 uv.zip
+
+# Fetched by scripts/fetch_jbig2.py
+jbig2/

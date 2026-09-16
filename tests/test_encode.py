@@ -96,3 +96,29 @@ def test_build_g4_pdf_is_recognised_as_bilevel(tmp_path):
     profile = inspect(dst)
     assert profile.kind == "bilevel"
     assert profile.dpi == 150
+
+
+def test_jbig2_is_found_beside_the_application(tmp_path, monkeypatch):
+    """A double-clicked launcher inherits no useful PATH, so the binary the
+    installer places next to the application must be found without one."""
+    import pdfshrink.encode as encode
+
+    folder = tmp_path / "jbig2"
+    folder.mkdir()
+    name = "jbig2.exe" if os.name == "nt" else "jbig2"
+    binary = folder / name
+    binary.write_bytes(b"#!/bin/sh\nexit 0\n")
+    binary.chmod(0o755)
+
+    monkeypatch.setattr(encode.shutil, "which", lambda _: None)
+    monkeypatch.setattr(encode, "APP_DIRS", (str(folder),))
+    assert encode.jbig2_path() == str(binary)
+    assert encode.have_jbig2() is True
+
+
+def test_jbig2_absent_is_not_an_error(tmp_path, monkeypatch):
+    import pdfshrink.encode as encode
+    monkeypatch.setattr(encode.shutil, "which", lambda _: None)
+    monkeypatch.setattr(encode, "APP_DIRS", (str(tmp_path / "nothing-here"),))
+    assert encode.jbig2_path() is None
+    assert encode.have_jbig2() is False
