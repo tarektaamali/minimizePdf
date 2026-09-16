@@ -1,0 +1,12 @@
+[project]
+name = "pdfshrink"
+version = "1.0.0"
+requires-python = ">=3.9"
+dependencies = [
+    "pikepdf", "pypdfium2", "pillow", "numpy", "scipy", "flask",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = ["slow: full-document runs over the 101-page fixture"]
