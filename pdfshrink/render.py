@@ -64,3 +64,67 @@ def inspect(path):
         dpi = int(round(sum(widths) / len(widths)))
         kind = "bilevel" if depths == {1} else "raster"
         return Profile(n, kind, dpi, pts, has_text)
+
+
+import io
+
+import pypdfium2 as pdfium
+
+INK_THRESHOLD = 128
+
+
+def _to_ink(image):
+    """1 = ink. PIL gives white as True, hence the inversion."""
+    return (~np.array(image.convert("1")).astype(bool)).astype(np.uint8)
+
+
+def load_bilevel_pages(path):
+    """Ink arrays at the embedded images' own resolution."""
+    out = []
+    with pikepdf.open(path) as pdf:
+        for page in pdf.pages:
+            images = _page_images(page)
+            if not images:
+                raise ValueError("page without an image in a bilevel document")
+            pil = pikepdf.PdfImage(images[0]).as_pil_image()
+            out.append(_to_ink(pil))
+    return out
+
+
+def render_jpeg_pages(path, dpi, quality):
+    """Rasterise every page to JPEG at the given resolution."""
+    out = []
+    doc = pdfium.PdfDocument(path)
+    try:
+        for index in range(len(doc)):
+            pil = doc[index].render(scale=dpi / 72.0).to_pil().convert("RGB")
+            buf = io.BytesIO()
+            pil.save(buf, format="JPEG", quality=quality, optimize=True)
+            out.append((buf.getvalue(), pil.width, pil.height))
+    finally:
+        doc.close()
+    return out
+
+
+def decode_pages_ink(path, shapes):
+    """Render a PDF back to ink arrays matching the given shapes.
+
+    Verification compares what the encoder was fed against what a reader
+    actually sees, so this deliberately goes through a renderer rather
+    than pulling the stored stream back out.
+    """
+    out = []
+    doc = pdfium.PdfDocument(path)
+    try:
+        if len(doc) != len(shapes):
+            raise ValueError("page count changed during compression")
+        for index, (h, w) in enumerate(shapes):
+            page = doc[index]
+            scale = w / page.get_width()
+            pil = doc[index].render(scale=scale, grayscale=True).to_pil().convert("L")
+            if pil.size != (w, h):
+                pil = pil.resize((w, h), Image.NEAREST)
+            out.append((np.array(pil) < INK_THRESHOLD).astype(np.uint8))
+    finally:
+        doc.close()
+    return out

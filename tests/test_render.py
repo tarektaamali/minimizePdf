@@ -22,3 +22,45 @@ def test_inspect_colour_scan(colour_scan_pdf):
     assert p.kind == "raster"
     assert p.pages == 2
     assert p.dpi == 150  # 1240 px across 595 pt
+
+
+import numpy as np
+
+from pdfshrink.render import (decode_pages_ink, load_bilevel_pages,
+                              render_jpeg_pages)
+
+
+def test_load_bilevel_pages_shape_and_polarity(ba2):
+    pages = load_bilevel_pages(ba2)
+    assert len(pages) == 101
+    assert pages[0].shape == (3506, 2480)
+    assert pages[0].dtype == np.uint8
+    ink = pages[0].mean()
+    # A page of text is mostly blank, so ink must be the minority.
+    assert 0.0 < ink < 0.5
+
+
+def test_render_jpeg_pages(colour_scan_pdf):
+    out = render_jpeg_pages(colour_scan_pdf, dpi=72, quality=60)
+    assert len(out) == 2
+    data, w, h = out[0]
+    assert data[:2] == b"\xff\xd8"      # JPEG SOI marker
+    assert (w, h) == (595, 842)
+
+
+def test_decode_pages_ink_roundtrip(ba2, tmp_path):
+    import pikepdf
+    # Decoding is page-for-page, so excerpt rather than feed a short list:
+    # a page-count mismatch is a verification failure, not a valid call.
+    excerpt = str(tmp_path / "two.pdf")
+    with pikepdf.open(ba2) as src:
+        out = pikepdf.new()
+        out.pages.extend(src.pages[:2])
+        out.save(excerpt)
+    pages = load_bilevel_pages(excerpt)
+    shapes = [p.shape for p in pages]
+    got = decode_pages_ink(excerpt, shapes)
+    assert len(got) == 2
+    assert got[0].shape == shapes[0]
+    # Same document in, same document out: agreement must be near total.
+    assert (got[0] == pages[0]).mean() > 0.98
