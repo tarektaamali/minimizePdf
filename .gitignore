@@ -9,3 +9,7 @@ dist/
 # Personal documents used as test fixtures - never publish these
 BA2.pdf
 *.scan.pdf
+
+# Extracted by Installer.bat
+uv.exe
+uv.zip
