@@ -16,8 +16,9 @@ from typing import List, Optional, Tuple
 import numpy as np
 from PIL import Image, ImageFilter
 
-from .encode import (build_jbig2_pdf, build_jpeg_pdf, have_jbig2,
-                     jbig2_encode, lossless_save, write_pbm)
+from .encode import (build_g4_pdf, build_jbig2_pdf, build_jpeg_pdf,
+                     g4_encode, have_jbig2, jbig2_encode, lossless_save,
+                     write_pbm)
 from .render import inspect, load_bilevel_pages, render_jpeg_pages
 from .verify import is_clean, verify
 
@@ -43,6 +44,19 @@ BILEVEL_LADDER = [
 
 RASTER_LADDER = [(300, 80), (250, 75), (200, 70), (150, 65), (120, 60),
                  (100, 55), (85, 50), (72, 45)]
+
+# scale, blur, binary threshold, speck size. No symbol-match threshold:
+# G4 has no lossy parameter to tune, so only resolution varies. Scales
+# mirror BILEVEL_LADDER and reach 300/200/150/120/100 dpi from a 300 dpi
+# source, the resolutions measured in the design.
+G4_LADDER = [
+    (1.00, 0.0, 186, 0),
+    (1.00, 0.0, 186, 4),
+    (0.67, 0.4, 195, 4),
+    (0.50, 0.6, 205, 8),
+    (0.40, 0.6, 205, 8),
+    (0.34, 0.6, 205, 8),
+]
 
 
 @dataclass
@@ -150,6 +164,46 @@ def _shrink_bilevel(src, dst, target, profile, min_dpi, progress):
         shutil.rmtree(workdir, ignore_errors=True)
 
 
+def _g4_rungs(profile, min_dpi):
+    for scale, blur, bint, speck in G4_LADDER:
+        dpi = int(round(profile.dpi * scale))
+        if dpi >= min_dpi:
+            yield (scale, blur, bint, speck, dpi)
+
+
+def _encode_g4(source, rung, dst, pts, progress):
+    scale, blur, bint, speck, dpi = rung
+    pages = []
+    for i, arr in enumerate(source):
+        page = prep(arr, scale, blur, bint, speck)
+        h, w = page.shape
+        pages.append((g4_encode(page), w, h))
+        _notify(progress, "compress", i + 1, len(source))
+    return build_g4_pdf(pages, dst, pts)
+
+
+def _shrink_bilevel_g4(src, dst, target, profile, min_dpi, progress):
+    """Bilevel without jbig2enc. No substitution check: G4 stores the exact
+    bitmap it is handed and cannot swap one glyph for another."""
+    source = load_bilevel_pages(src)
+    rungs = list(_g4_rungs(profile, min_dpi))
+    if not rungs:
+        return Result(False, 0, profile, reason="already_minimal", attempts=[])
+
+    attempts = []
+    size = None
+    for rung in rungs:
+        size = _encode_g4(source, rung, dst, profile.page_pts, progress)
+        attempts.append((rung[4], None, size))
+        if size <= target:
+            return Result(True, 0, profile, size=size, dpi=rung[4],
+                          attempts=attempts)
+    # The last rung is the smallest and is already at dst.
+    return Result(False, 0, profile, best_safe_size=size,
+                  best_safe_dpi=rungs[-1][4], reason="too_large",
+                  attempts=attempts)
+
+
 def _shrink_raster(src, dst, target, profile, min_dpi, progress):
     attempts = []
     usable = [(dpi, q) for dpi, q in RASTER_LADDER
@@ -186,6 +240,9 @@ def shrink(src, dst, target, min_dpi=100, progress=None):
         result = _shrink_digital(src, dst, target, profile)
     elif profile.kind == "bilevel" and have_jbig2():
         result = _shrink_bilevel(src, dst, target, profile, min_dpi, progress)
+    elif profile.kind == "bilevel":
+        result = _shrink_bilevel_g4(src, dst, target, profile, min_dpi,
+                                    progress)
     else:
         result = _shrink_raster(src, dst, target, profile, min_dpi, progress)
 
