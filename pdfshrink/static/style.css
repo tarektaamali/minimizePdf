@@ -1,0 +1,33 @@
+:root { color-scheme: light; font-family: system-ui, -apple-system, sans-serif; }
+body { margin: 0; background: #f6f6f4; color: #1b1b1b; }
+main { max-width: 40rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+h1 { font-size: 1.6rem; font-weight: 600; }
+.big { font-size: 1.35rem; margin: .4rem 0; }
+.small { font-size: .95rem; color: #5a5a5a; }
+.result { font-size: 2rem; font-weight: 600; color: #1d6f42; }
+.warn { color: #8a5b00; }
+
+#drop {
+  border: 3px dashed #b8b8b2; border-radius: 14px; padding: 3rem 1.5rem;
+  text-align: center; cursor: pointer; background: #fff;
+}
+#drop:focus-visible, #drop.over { border-color: #1d6f42; background: #f0f8f2; }
+
+label { display: block; margin: 1.5rem 0 .4rem; font-weight: 600; }
+input[type=text] {
+  font-size: 1.2rem; padding: .6rem .7rem; width: 9rem;
+  border: 2px solid #c4c4be; border-radius: 8px; background: #fff;
+}
+#echo.bad { color: #a11; }
+
+button, .button {
+  display: inline-block; margin-top: 1.4rem; padding: .85rem 1.6rem;
+  font-size: 1.15rem; font-weight: 600; border: 0; border-radius: 10px;
+  background: #1d6f42; color: #fff; cursor: pointer; text-decoration: none;
+}
+button:disabled { background: #c4c4be; cursor: not-allowed; }
+.link {
+  background: none; color: #33629c; text-decoration: underline;
+  padding: .4rem 0; font-size: 1rem; font-weight: 400;
+}
+progress { width: 100%; height: 1.1rem; margin: 1rem 0; }

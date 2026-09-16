@@ -105,3 +105,50 @@ def test_the_server_writes_a_journal(tmp_path, monkeypatch):
     web.LOG.warning("ceci est un test")
     assert journal.exists()
     assert "ceci est un test" in journal.read_text(encoding="utf8")
+
+
+REQUIRED_FRENCH = [
+    "Glissez votre PDF ici",
+    "ou cliquez pour choisir un fichier",
+    "Taille souhaitée",
+    "je ne comprends pas cette taille",
+    "Analyse du document",
+    "Vérification du texte",
+    "Télécharger",
+    "Ouvrir le dossier",
+    "Ouvrez le fichier pour le vérifier avant de l'envoyer.",
+    "Ce fichier ne peut pas descendre",
+    "Réduire quand même",
+    "Ce fichier n'est pas un PDF valide.",
+]
+
+
+def _page(client):
+    body = client.get("/").get_data(as_text=True)
+    body += client.get("/static/app.js").get_data(as_text=True)
+    return body
+
+
+def test_page_contains_all_french_copy(client):
+    missing = [s for s in REQUIRED_FRENCH if s not in _page(client)]
+    assert not missing, "missing French copy: %s" % missing
+
+
+def test_page_explains_every_refusal_reason(client):
+    """Each reason the engine can return needs a sentence, or the user
+    sees an empty panel. already_minimal did not exist when the page was
+    first specified."""
+    body = _page(client)
+    for reason in ("digital_floor", "substitution_risk", "already_minimal"):
+        assert reason in body, "the page never mentions %s" % reason
+
+
+def test_stylesheet_is_served(client):
+    assert client.get("/static/style.css").status_code == 200
+
+
+def test_favicon_is_served(client):
+    """A browser asks for it unprompted; without one every page load logs
+    a 404 and the tab shows a broken icon."""
+    assert client.get("/static/favicon.ico").status_code == 200
+    assert "favicon" in client.get("/").get_data(as_text=True)

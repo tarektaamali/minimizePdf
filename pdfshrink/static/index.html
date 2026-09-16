@@ -1,1 +1,59 @@
-<!doctype html><meta charset="utf-8"><p>Glissez votre PDF ici</p>
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Réduire PDF</title>
+<link rel="icon" href="/static/favicon.ico" sizes="any">
+<link rel="stylesheet" href="/static/style.css">
+
+<main>
+  <h1>Réduire un PDF</h1>
+
+  <section id="waiting">
+    <div id="drop" tabindex="0" role="button">
+      <p class="big">Glissez votre PDF ici</p>
+      <p class="small">ou cliquez pour choisir un fichier</p>
+    </div>
+    <input type="file" id="file" accept="application/pdf" hidden>
+
+    <label for="target">Taille souhaitée</label>
+    <input type="text" id="target" value="200 Ko" autocomplete="off">
+    <p id="echo" class="small"></p>
+
+    <button id="go" disabled>Réduire</button>
+  </section>
+
+  <section id="working" hidden>
+    <p class="big" id="working-name"></p>
+    <progress id="bar" max="100" value="0"></progress>
+    <p class="small" id="working-stage">Analyse du document…</p>
+    <p class="small">Cela peut prendre quelques minutes pour un long document.</p>
+  </section>
+
+  <section id="done" hidden>
+    <p class="big result" id="done-sizes"></p>
+    <a id="download" class="button" href="#">Télécharger</a>
+    <p class="small" id="done-saved"></p>
+    <button id="reveal" class="link">Ouvrir le dossier</button>
+    <p class="warn" id="done-textlayer" hidden>
+      Le texte recherchable a été supprimé.
+    </p>
+    <p class="small">Ouvrez le fichier pour le vérifier avant de l'envoyer.</p>
+    <button id="again" class="link">Réduire un autre fichier</button>
+  </section>
+
+  <section id="refused" hidden>
+    <p class="big" id="refused-title"></p>
+    <p id="refused-why"></p>
+    <button id="keep" hidden>Réduire quand même</button>
+    <button id="again2" class="link">Réduire un autre fichier</button>
+  </section>
+
+  <section id="failed" hidden>
+    <p class="big" id="failed-why">Ce fichier n'est pas un PDF valide.</p>
+    <button id="again3" class="link">Réduire un autre fichier</button>
+  </section>
+</main>
+
+<script src="/static/app.js"></script>
+</html>
