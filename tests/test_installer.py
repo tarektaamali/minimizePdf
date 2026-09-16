@@ -117,3 +117,13 @@ def test_batch_files_use_crlf_line_endings():
         lf_only = data.count(b"\n") - crlf
         assert lf_only == 0, "%s has %d LF-only line endings" % (name, lf_only)
         assert crlf > 0, "%s has no line endings at all" % name
+
+
+@windows_only
+def test_batch_files_force_utf8_output():
+    """format_size emits U+202F, which Windows' default cp1252 console
+    encoding cannot represent: printing a size raises UnicodeEncodeError.
+    PYTHONUTF8=1 is what stops that reaching the user."""
+    for name in ("Installer.bat", "Réduire PDF.bat"):
+        text = (ROOT / name).read_text(encoding="utf8")
+        assert "PYTHONUTF8=1" in text, "%s does not force UTF-8" % name
