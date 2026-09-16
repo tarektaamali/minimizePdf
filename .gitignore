@@ -5,3 +5,7 @@ __pycache__/
 PDF-réduits/
 build/
 dist/
+
+# Personal documents used as test fixtures - never publish these
+BA2.pdf
+*.scan.pdf
