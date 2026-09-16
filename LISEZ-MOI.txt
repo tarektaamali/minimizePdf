@@ -1,0 +1,19 @@
+Réduire PDF
+===========
+
+Première utilisation :
+  double-cliquez sur Installer.bat, puis attendez le message
+  « Installation terminée ».
+
+Ensuite :
+  double-cliquez sur l'icône « Réduire PDF » sur le Bureau.
+  Votre navigateur s'ouvre ; déposez-y votre PDF.
+
+Les fichiers réduits sont enregistrés dans le dossier
+« PDF-réduits » sur votre Bureau. Le fichier d'origine
+n'est jamais modifié.
+
+Ouvrez toujours le fichier réduit pour le vérifier avant
+de l'envoyer.
+
+En cas de problème, envoyez le fichier journal.txt à votre contact.

@@ -40,6 +40,18 @@ set "RC=%errorlevel%"
 popd
 if not "%RC%"=="0" goto failed
 
+echo   Creation du raccourci...
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "$ErrorActionPreference='Stop';" ^
+  "$desk=[Environment]::GetFolderPath('Desktop');" ^
+  "$s=(New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path $desk 'Réduire PDF.lnk'));" ^
+  "$s.TargetPath='%APP%Réduire PDF.bat';" ^
+  "$s.WorkingDirectory='%APP%';" ^
+  "$s.IconLocation='%APP%.venv\Scripts\pythonw.exe,0';" ^
+  "$s.Description='Réduire la taille d''un PDF';" ^
+  "$s.Save()"
+if errorlevel 1 goto failed
+
 echo.
 echo   Installation terminee.
 echo.

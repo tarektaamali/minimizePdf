@@ -1,0 +1,8 @@
+# Batch files are parsed by cmd.exe, which mis-reads LF-only line endings
+# and silently truncates commands. They must always check out as CRLF.
+*.bat text eol=crlf
+*.txt text eol=crlf
+
+# Everything else keeps LF.
+*.py text eol=lf
+*.md text eol=lf

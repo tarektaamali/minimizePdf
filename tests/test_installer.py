@@ -51,3 +51,69 @@ def test_verify_install_succeeds_in_this_environment():
                           cwd=str(ROOT), capture_output=True, text=True)
     assert done.returncode == 0, done.stdout + done.stderr
     assert "OK :" in done.stdout
+
+
+def test_readme_is_french_and_mentions_the_output_folder():
+    text = (ROOT / "LISEZ-MOI.txt").read_text(encoding="utf8")
+    assert "PDF-réduits" in text
+    assert "Installer.bat" in text
+    assert "vérifier avant" in text
+
+
+@windows_only
+def test_launcher_uses_pythonw_so_no_console_appears():
+    text = (ROOT / "Réduire PDF.bat").read_text(encoding="utf8")
+    assert "pythonw.exe" in text
+    assert "python.exe" not in text.replace("pythonw.exe", "")
+    assert "chcp 65001" in text
+
+
+@windows_only
+def test_installer_creates_a_desktop_shortcut():
+    text = (ROOT / "Installer.bat").read_text(encoding="utf8")
+    assert "WScript.Shell" in text
+    assert "Réduire PDF.lnk" in text
+    assert "GetFolderPath('Desktop')" in text
+
+
+@windows_only
+def test_the_server_starts_and_serves_the_page():
+    """Skips until pdfshrink/web.py exists (parent plan, Task 8)."""
+    pytest.importorskip("pdfshrink.web")
+    import socket
+    import threading
+    import time
+    import urllib.request
+
+    from pdfshrink import web
+
+    sock = socket.socket()
+    sock.bind(("127.0.0.1", 0))
+    port = sock.getsockname()[1]
+    sock.close()
+
+    app = web.create_app()
+    thread = threading.Thread(
+        target=lambda: app.run(host="127.0.0.1", port=port, use_reloader=False),
+        daemon=True)
+    thread.start()
+    for _ in range(50):
+        try:
+            with urllib.request.urlopen("http://127.0.0.1:%d/" % port) as r:
+                assert r.status == 200
+                return
+        except Exception:
+            time.sleep(0.1)
+    pytest.fail("the server did not answer on 127.0.0.1:%d" % port)
+
+
+def test_batch_files_use_crlf_line_endings():
+    """cmd.exe reads batch files by byte offset and loses sync on LF-only
+    endings: `set` became `"APP=` and `powershell` became `ershell`. A file
+    can appear to work and break as soon as an edit shifts the offsets."""
+    for name in ("Installer.bat", "Réduire PDF.bat"):
+        data = (ROOT / name).read_bytes()
+        crlf = data.count(b"\r\n")
+        lf_only = data.count(b"\n") - crlf
+        assert lf_only == 0, "%s has %d LF-only line endings" % (name, lf_only)
+        assert crlf > 0, "%s has no line endings at all" % name
