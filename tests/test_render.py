@@ -64,3 +64,20 @@ def test_decode_pages_ink_roundtrip(ba2, tmp_path):
     assert got[0].shape == shapes[0]
     # Same document in, same document out: agreement must be near total.
     assert (got[0] == pages[0]).mean() > 0.98
+
+
+def test_load_bilevel_pages_falls_back_when_jbig2dec_is_missing(jbig2_pdf):
+    """Re-shrinking an already shrunk file must not raise DependencyError."""
+    pages = load_bilevel_pages(jbig2_pdf)
+    assert len(pages) == 1
+    assert pages[0].shape == (64, 64)
+    assert pages[0].dtype == np.uint8
+    ink = float(pages[0].mean())
+    assert 0.02 < ink < 0.4, ink
+
+
+def test_load_bilevel_pages_still_uses_pikepdf_when_it_can(bilevel_pdf):
+    pages = load_bilevel_pages(bilevel_pdf)
+    assert len(pages) == 3
+    assert pages[0].shape == (1754, 1240)
+    assert 0.0 < float(pages[0].mean()) < 0.5

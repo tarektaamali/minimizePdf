@@ -107,3 +107,12 @@ def bilevel_pdf(tmp_path):
     out = tmp_path / "bilevel.pdf"
     pdf.save(str(out))
     return str(out)
+
+
+@pytest.fixture
+def jbig2_pdf():
+    """A minimal JBIG2 PDF. pikepdf cannot decode it without jbig2dec."""
+    path = ROOT / "tests" / "fixtures" / "jbig2_min.pdf"
+    if not path.exists():
+        pytest.skip("run scripts/make_jbig2_fixture.py")
+    return str(path)

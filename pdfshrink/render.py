@@ -79,15 +79,38 @@ def _to_ink(image):
 
 
 def load_bilevel_pages(path):
-    """Ink arrays at the embedded images' own resolution."""
-    out = []
+    """Ink arrays at the embedded images' own resolution.
+
+    pikepdf extracts the stored image directly, which is exact and cheap,
+    but it shells out to jbig2dec for JBIG2 streams. That binary is not
+    shipped, so any page it cannot decode is rendered with pypdfium2
+    instead, which decodes JBIG2 itself.
+    """
+    out, deferred = [], []
     with pikepdf.open(path) as pdf:
-        for page in pdf.pages:
+        for index, page in enumerate(pdf.pages):
             images = _page_images(page)
             if not images:
                 raise ValueError("page without an image in a bilevel document")
-            pil = pikepdf.PdfImage(images[0]).as_pil_image()
-            out.append(_to_ink(pil))
+            image = images[0]
+            try:
+                out.append(_to_ink(pikepdf.PdfImage(image).as_pil_image()))
+            except Exception:
+                out.append(None)
+                deferred.append((index, int(image.Width), int(image.Height)))
+
+    if deferred:
+        doc = pdfium.PdfDocument(path)
+        try:
+            for index, w, h in deferred:
+                page = doc[index]
+                pil = page.render(scale=w / page.get_width(),
+                                  grayscale=True).to_pil().convert("L")
+                if pil.size != (w, h):
+                    pil = pil.resize((w, h), Image.NEAREST)
+                out[index] = (np.array(pil) < INK_THRESHOLD).astype(np.uint8)
+        finally:
+            doc.close()
     return out
 
 
