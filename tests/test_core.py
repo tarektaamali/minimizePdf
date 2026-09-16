@@ -3,6 +3,7 @@ import os
 import pytest
 
 from pdfshrink.core import shrink
+from pdfshrink.encode import have_jbig2
 from pdfshrink.verify import is_clean
 
 
@@ -39,8 +40,14 @@ def test_progress_callback_reports_stages(colour_scan_pdf, tmp_path):
 
 
 @pytest.mark.slow
+@pytest.mark.skipif(not have_jbig2(), reason="jbig2enc not installed")
 def test_ba2_golden_run(ba2, tmp_path):
-    """Matches the measured probe exactly. Guards against regression."""
+    """Matches the measured probe exactly. Guards against regression.
+
+    This is the JBIG2 path. Without jbig2enc the document takes the G4
+    ladder, which floors at 598879 bytes and cannot reach 200 Ko; see
+    test_ba2_g4_floor for the guarantee that applies on that machine.
+    """
     dst = str(tmp_path / "out.pdf")
     result = shrink(ba2, dst, target=200 * 1024)
     assert result.ok is True
@@ -111,3 +118,37 @@ def test_g4_never_runs_the_substitution_check(bilevel_pdf, tmp_path,
                         lambda *a, **k: called.append(a) or (0, None))
     core.shrink(bilevel_pdf, str(tmp_path / "out.pdf"), target=200 * 1024)
     assert called == []
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(have_jbig2(), reason="measures the ladder without jbig2enc")
+def test_ba2_g4_floor(ba2, tmp_path):
+    """What a Windows machine without jbig2enc can honestly promise.
+
+    Measured on the 1687366-byte original: the G4 ladder floors at 598879
+    bytes, so a 200 Ko target must be refused rather than met badly.
+    """
+    dst = str(tmp_path / "out.pdf")
+    result = shrink(ba2, dst, target=200 * 1024)
+    assert result.ok is False
+    assert result.reason == "too_large"
+    assert result.best_safe_dpi == 102
+    assert abs(result.best_safe_size - 598879) < 598879 * 0.02
+
+    by_dpi = {dpi: size for dpi, _, size in result.attempts}
+    assert abs(by_dpi[150] - 842501) < 842501 * 0.02
+    # 8.1 Ko/page at 150 dpi is what puts 24 pages inside a 200 Ko budget.
+    assert round(by_dpi[150] / 101 / 1024, 1) == 8.1
+    assert list(by_dpi.values()) == sorted(by_dpi.values(), reverse=True)
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(have_jbig2(), reason="measures the ladder without jbig2enc")
+def test_ba2_g4_meets_a_reachable_target(ba2, tmp_path):
+    """A budget G4 can actually meet stops at the best rung that fits."""
+    dst = str(tmp_path / "out.pdf")
+    result = shrink(ba2, dst, target=900 * 1024)
+    assert result.ok is True
+    assert result.dpi == 150
+    assert result.size <= 900 * 1024
+    assert os.path.getsize(dst) == result.size

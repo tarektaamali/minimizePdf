@@ -2,6 +2,7 @@ import numpy as np
 import pikepdf
 import pytest
 
+from pdfshrink.encode import have_jbig2
 from pdfshrink.verify import SUBSTITUTION_PIXELS, is_clean, verify
 
 
@@ -23,8 +24,13 @@ def test_verify_detects_page_count_change(tmp_path):
 
 
 @pytest.mark.slow
+@pytest.mark.skipif(not have_jbig2(), reason="jbig2enc not installed")
 def test_verify_reproduces_golden_clump(ba2, tmp_path):
-    """The known-good BA2 run: 84px on page 85, below the threshold."""
+    """The known-good BA2 run: 84px on page 85, below the threshold.
+
+    JBIG2 only. The G4 ladder is never substitution-checked, because it
+    cannot substitute a glyph.
+    """
     from pdfshrink.core import shrink
     dst = str(tmp_path / "out.pdf")
     result = shrink(ba2, dst, target=200 * 1024)

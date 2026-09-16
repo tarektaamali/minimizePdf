@@ -256,17 +256,25 @@ so the runner exists to work around a problem that no longer exists.
 
 ## Risks
 
-**The golden test cannot run until the true `BA2.pdf` is found.** The 1 648 Ko,
-300 dpi original is not on this machine; only its output is. Until it appears, the
-199 Ko / 84 px result is a claim in a document rather than a green test.
+**The JBIG2 golden test cannot run on a machine without `jbig2enc`.**
+*Resolved in part during implementation:* the true 1 687 366-byte, 300 dpi original
+was supplied and is now the fixture, so `inspect`, extraction and the G4 ladder are
+all verified against it. The 199 Ko / 84 px JBIG2 result still cannot be reproduced
+here, because that path needs `jbig2enc`; both JBIG2 golden tests are now skipped
+rather than failed, and `test_ba2_g4_floor` records what this machine can promise.
 
 **G4 does not close the gap for long scans.** A 101-page scan floors at 614,7 Ko,
 three times over a 200 Ko target, and the ugliest rung anyone would accept still
 misses. Long scans are refused on Windows. The refusal is correct and honest, but
 it is a real capability difference from a macOS machine with `jbig2enc`.
 
-**`prep()`'s effect on G4 is unmeasured.** It is expected to help and cannot hurt,
-but the pages-per-budget figures above assume it does nothing.
+~~**`prep()`'s effect on G4 is unmeasured.**~~ *Measured during implementation, on
+the true 300 dpi original:* 842 501 bytes at 150 dpi with `prep()` against 859 822
+naive — about 2 % better, not the large gain JBIG2 sees from the same
+preprocessing. The ladder on the real original measures 1 785 581 / 1 201 077 /
+842 501 / 690 779 / 598 879 bytes at 300 / 201 / 150 / 120 / 102 dpi, within a few
+per cent of both the parent design's table and the figures above. At **8,1 Ko/page
+at 150 dpi**, the 24-pages-per-200 Ko claim holds exactly.
 
 **macOS is now the unverified platform.** The asymmetry has simply reversed. The
 single `platform_paths` module and the patched-`sys.platform` tests reduce the risk;
