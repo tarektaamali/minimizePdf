@@ -78,13 +78,22 @@ def _to_ink(image):
     return (~np.array(image.convert("1")).astype(bool)).astype(np.uint8)
 
 
+def _is_jbig2(image):
+    """JBIG2 is recognised up front rather than discovered by failure.
+
+    pikepdf decodes it by spawning jbig2dec, which is not shipped, so
+    letting it try means one doomed process per page.
+    """
+    return "/JBIG2Decode" in str(image.get("/Filter"))
+
+
 def load_bilevel_pages(path):
     """Ink arrays at the embedded images' own resolution.
 
     pikepdf extracts the stored image directly, which is exact and cheap,
     but it shells out to jbig2dec for JBIG2 streams. That binary is not
-    shipped, so any page it cannot decode is rendered with pypdfium2
-    instead, which decodes JBIG2 itself.
+    shipped, so those pages -- and any other pikepdf cannot decode -- are
+    rendered with pypdfium2 instead, which decodes JBIG2 itself.
     """
     out, deferred = [], []
     with pikepdf.open(path) as pdf:
@@ -93,6 +102,10 @@ def load_bilevel_pages(path):
             if not images:
                 raise ValueError("page without an image in a bilevel document")
             image = images[0]
+            if _is_jbig2(image):
+                out.append(None)
+                deferred.append((index, int(image.Width), int(image.Height)))
+                continue
             try:
                 out.append(_to_ink(pikepdf.PdfImage(image).as_pil_image()))
             except Exception:
