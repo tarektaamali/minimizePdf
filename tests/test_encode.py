@@ -120,5 +120,9 @@ def test_jbig2_absent_is_not_an_error(tmp_path, monkeypatch):
     import pdfshrink.encode as encode
     monkeypatch.setattr(encode.shutil, "which", lambda _: None)
     monkeypatch.setattr(encode, "APP_DIRS", (str(tmp_path / "nothing-here"),))
+    # _EXTRA_PATHS is searched too, and /opt/homebrew/bin holds a real jbig2
+    # on a developer Mac - without this the test only passes where the tool
+    # happens to be absent.
+    monkeypatch.setattr(encode, "_EXTRA_PATHS", ())
     assert encode.jbig2_path() is None
     assert encode.have_jbig2() is False
