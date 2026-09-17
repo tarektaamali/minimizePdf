@@ -154,8 +154,25 @@ is installed, so the suite is green either way.
   icon again starts another one on another port.
 - **If the browser fails to open**, the user sees nothing; the URL is only in
   `journal.txt`.
-- **macOS is now the unverified platform.** Every platform difference lives in
-  `platform_paths.py`, but the macOS launcher was never built.
+- **macOS is the less-tested platform.** Every platform difference lives in
+  `platform_paths.py`. The launcher exists and starts from a bare environment,
+  but nothing here has been run on a second Mac.
+
+### Limits of the compression itself
+
+Measured, not estimated. Each carries a `TODO(...)` comment at the place in the
+code it belongs to.
+
+| | What happens | Where |
+|---|---|---|
+| **Text documents with photos** | Only lossless restructuring, so the images are left untouched: a 9 638 Ko document came out at 9 637 Ko against a 200 Ko target — 48× over. This is the one case an online tool wins outright. | `core.py` `downsample-images` |
+| **Mixed page sizes** | Every page is rebuilt at page 1's dimensions, so a landscape page in a portrait document comes out squashed: 842×595 in, 595×842 out. | `render.py` `page-sizes` |
+| **Annotations and metadata** | A rebuilt file loses links, annotations, outlines, form fields and XMP metadata — measured: 2 annotations and the document title gone. | `encode.py` `preserve-structure` |
+| **OCR text layers** | A scan with an invisible OCR layer stops being searchable. The page warns; it does not preserve the layer. | `core.py` `keep-ocr-layer` |
+| **Long-running server** | Job records and their temp directories are never reaped. | `web.py` `reap-jobs` |
+| **Verification scope** | Only the JBIG2 path is checked, because it is the only one that can substitute a glyph. Nothing measures legibility. | `verify.py` `verify-other-paths` |
+
+The first three affect the correctness of the output, not merely its size.
 
 ## Layout
 

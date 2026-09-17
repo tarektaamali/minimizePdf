@@ -23,6 +23,10 @@ from .output import output_folder, reveal, unique_path
 from .verify import SUBSTITUTION_PIXELS
 from .sizes import describe_size, parse_size
 
+# TODO(reap-jobs): job records live for the life of the process and each one
+# leaves a temp directory holding its result, so a long-running server grows
+# without bound. Needs an age-based sweep that deletes the directory and drops
+# the record, plus a cap on how many are retained.
 JOBS = {}
 LOCK = threading.Lock()
 LOG = logging.getLogger("pdfshrink")

@@ -20,6 +20,10 @@ except ImportError:
 SUBSTITUTION_PIXELS = 120
 
 
+# TODO(verify-other-paths): only the JBIG2 path is checked. G4 is lossless per
+# pixel and JPEG degrades a glyph without replacing it, so neither can produce
+# the substitution this clump test looks for - but neither is measured for
+# legibility either, and that would be a different instrument, not this one.
 def verify(fed_arrays, dst):
     """Return (largest_clump, page) or (-1, None) if unreadable."""
     if not HAVE_SCIPY:

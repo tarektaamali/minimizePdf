@@ -117,6 +117,11 @@ def jbig2_encode(pbm_paths, workdir, symthr):
     return sym, streams
 
 
+# TODO(preserve-structure): every builder below starts from pikepdf.new(), so
+# annotations, links, outlines, form fields, page labels and XMP metadata are
+# dropped - measured: 2 annotations and the document title lost on a rebuild.
+# The fix is to open the source and replace each page's image XObject in place
+# rather than constructing a fresh document around the new streams.
 def _place(pdf, stream, pts):
     pw, ph = pts
     page = pdf.add_blank_page(page_size=(pw, ph))

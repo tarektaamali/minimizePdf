@@ -133,6 +133,10 @@ def _encode_bilevel(source, rung, workdir, dst, pts, progress):
     return fed, size
 
 
+# TODO(keep-ocr-layer): a scan carrying an invisible OCR text layer is rebuilt
+# as images only, so the document stops being searchable. The page warns about
+# it, but replacing the image XObject in place (see preserve-structure in
+# encode.py) would keep the layer instead of merely reporting its loss.
 def _shrink_bilevel(src, dst, target, profile, min_dpi, progress):
     workdir = tempfile.mkdtemp()
     try:
@@ -228,6 +232,12 @@ def _shrink_raster(src, dst, target, profile, min_dpi, progress):
                   attempts=attempts)
 
 
+# TODO(downsample-images): the digital path only restructures losslessly, so
+# a text document carrying photos barely moves - measured 9 638 Ko -> 9 637 Ko
+# against a 200 Ko target, 48x over, because the images are left untouched.
+# This is the one place an online tool still wins outright. The missing
+# capability is downsampling and re-encoding each embedded image in place
+# while leaving the text as text.
 def _shrink_digital(src, dst, target, profile):
     size = lossless_save(src, dst)
     if size <= target:

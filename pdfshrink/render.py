@@ -84,6 +84,10 @@ def inspect(path):
         n = len(pages)
         box = [float(v) for v in pages[0].mediabox]
         pts = (box[2] - box[0], box[3] - box[1])
+        # TODO(page-sizes): every page is rebuilt at page 1's dimensions, so a
+        # landscape page inside a portrait document comes out squashed -
+        # measured 842x595 in, 595x842 out. Profile needs a per-page size list
+        # and encode._place must take the size for the page it is writing.
 
         has_text = any("/Font" in p.get("/Resources", {}) for p in pages)
 
