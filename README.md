@@ -41,6 +41,15 @@ allow-list. This matters: the project folder also holds test documents, a 65 MB
 `uv.exe` and a 214 MB virtualenv. A deny-list runs as a second net and the test
 suite proves it fires, so a personal document cannot ship by accident.
 
+## Install (macOS, once)
+
+```bash
+bash scripts/setup-mac.sh
+```
+
+Creates the virtual environment from `requirements.txt`, installs the optional
+`jbig2enc`, and puts the launcher on the Desktop. Double-click it to start.
+
 ## Development
 
 ```bash
@@ -59,7 +68,10 @@ python scripts/contact_sheet.py IN.pdf sheet.png   # legibility at every rung
 ```
 
 Source targets **Python 3.9 syntax** so macOS system Python keeps working; the
-Windows installer pins 3.12.
+Windows installer pins 3.12. `requirements.txt` carries a pin for each, chosen
+by environment marker — pikepdf 10, numpy 2.1 and scipy 1.14 all need 3.10 or
+newer, so a single set of pins cannot install on both. `tests/test_requirements.py`
+fails if a package ever loses its version for one of them.
 
 ## How it works
 

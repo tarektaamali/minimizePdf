@@ -13,10 +13,19 @@ windows_only = pytest.mark.skipif(sys.platform != "win32",
 
 
 def test_requirements_are_all_pinned():
-    lines = (ROOT / "requirements.txt").read_text(encoding="utf8").split()
-    assert lines, "requirements.txt is empty"
-    for line in lines:
-        assert "==" in line, "%s is not pinned" % line
+    """Every requirement carries an exact version.
+
+    Split on lines rather than whitespace: entries now carry environment
+    markers, because macOS runs the system Python 3.9 while the Windows
+    installer brings its own 3.12, and several pins need 3.10 or newer.
+    """
+    text = (ROOT / "requirements.txt").read_text(encoding="utf8")
+    entries = [line.split("#", 1)[0].strip() for line in text.splitlines()]
+    entries = [line for line in entries if line]
+    assert entries, "requirements.txt is empty"
+    for entry in entries:
+        requirement = entry.split(";", 1)[0].strip()
+        assert "==" in requirement, "%s is not pinned" % entry
 
 
 @windows_only

@@ -19,11 +19,10 @@ def test_launcher_is_executable_and_self_locating():
     assert "PYTHONUTF8" in text
 
 
-def test_setup_script_creates_a_venv_and_survives_python_39():
+def test_setup_script_installs_the_pinned_requirements():
     setup = (ROOT / "scripts" / "setup-mac.sh").read_text(encoding="utf8")
     assert "python3 -m venv" in setup
-    # requirements.txt pins versions needing 3.10+, but the source targets
-    # 3.9 so macOS system Python keeps working; setup must not hard-fail.
-    assert "requirements.txt" in setup
-    for package in ("pikepdf", "pypdfium2", "pillow", "numpy", "scipy", "flask"):
-        assert package in setup
+    # The pins carry environment markers for 3.9 and 3.12, so macOS installs
+    # straight from the file with no special case. tests/test_requirements.py
+    # is what guarantees that stays true.
+    assert "pip install -q -r requirements.txt" in setup

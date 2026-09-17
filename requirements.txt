@@ -1,7 +1,29 @@
-pikepdf==10.13.0.post1
+# Two sets of pins, selected by the interpreter.
+#
+# Windows installs its own Python 3.12 through uv, so it takes the current
+# releases. macOS has no installer and uses the system interpreter, which
+# is 3.9 on macOS 12 through 15 — and pikepdf 10, numpy 2.1 and scipy 1.14
+# all require 3.10 or newer. Without the markers below, `pip install -r`
+# simply fails there, which is why the source deliberately stays within
+# 3.9 syntax.
+#
+# The 3.9 column is not a guess: it is what pip resolves and what the test
+# suite passes on. tests/test_requirements.py keeps the two in step.
+
+pikepdf==10.13.0.post1 ; python_version >= "3.10"
+pikepdf==9.11.0        ; python_version <  "3.10"
+
 pypdfium2==5.13.0
-pillow==12.3.0
-numpy==2.5.3
-scipy==1.18.1
+
+pillow==12.3.0         ; python_version >= "3.10"
+pillow==11.3.0         ; python_version <  "3.10"
+
+numpy==2.5.3           ; python_version >= "3.10"
+numpy==2.0.2           ; python_version <  "3.10"
+
+scipy==1.18.1          ; python_version >= "3.10"
+scipy==1.13.1          ; python_version <  "3.10"
+
 flask==3.1.3
+
 zstandard==0.25.0
