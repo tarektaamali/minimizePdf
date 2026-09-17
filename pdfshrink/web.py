@@ -20,6 +20,7 @@ from flask import Flask, abort, jsonify, request, send_file
 
 from .core import shrink
 from .output import output_folder, reveal, unique_path
+from .verify import SUBSTITUTION_PIXELS
 from .sizes import describe_size, parse_size
 
 JOBS = {}
@@ -71,6 +72,10 @@ def _run(job_id, src, dst, target, original_name):
         "before": result.before,
         "pages": result.profile.pages,
         "kind": result.profile.kind,
+        # The substitution check is what distinguishes this tool, so its
+        # measurement travels to the page instead of living only in the log.
+        "check": list(result.check) if result.check else None,
+        "threshold": SUBSTITUTION_PIXELS,
         "lost_text_layer": result.profile.has_text_layer
                            and result.profile.kind != "digital",
     }

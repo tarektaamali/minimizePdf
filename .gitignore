@@ -24,3 +24,4 @@ journal.txt
 
 # Built by scripts/package.py
 dist/
+.claude/launch.json

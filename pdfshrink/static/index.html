@@ -1,59 +1,177 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Réduire PDF</title>
-<link rel="icon" href="/static/favicon.ico" sizes="any">
+<title>IntactPDF — compress a PDF without damaging the text</title>
+<meta name="description" content="Compress a PDF to an exact size on your own computer. Every result is decoded and checked for altered characters. Nothing is uploaded.">
 <link rel="stylesheet" href="/static/style.css">
 
-<main>
-  <h1>Réduire un PDF</h1>
+<header class="masthead">
+  <a class="mark" href="/">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <circle cx="12" cy="12" r="9.25"/>
+      <path d="M7.6 12.3l3 3 5.8-6.4"/>
+    </svg>
+    <span>Intact<em>PDF</em></span>
+  </a>
+</header>
 
-  <section id="waiting">
-    <div id="drop" tabindex="0" role="button">
-      <p class="big">Glissez votre PDF ici</p>
-      <p class="small">ou cliquez pour choisir un fichier</p>
+<main>
+  <section class="lede">
+    <h1>Compress a PDF without damaging a single character.</h1>
+    <p>Runs on your computer. Nothing is uploaded, and every result is checked
+      before you get it.</p>
+  </section>
+
+  <!-- ① waiting -->
+  <section id="waiting" class="panel">
+    <div id="drop" tabindex="0" role="button" aria-label="Choose a PDF">
+      <svg class="tray" viewBox="0 0 40 30" aria-hidden="true" focusable="false">
+        <path d="M6 3h17l11 9v15H6z"/>
+        <path d="M23 3v9h11"/>
+      </svg>
+      <p class="lead" id="drop-title">Drop a PDF here</p>
+      <p class="muted">or choose a file</p>
     </div>
     <input type="file" id="file" accept="application/pdf" hidden>
 
-    <label for="target">Taille souhaitée</label>
-    <input type="text" id="target" value="200 Ko" autocomplete="off">
-    <p id="echo" class="small"></p>
-
-    <button id="go" disabled>Réduire</button>
+    <div class="controls">
+      <div class="field">
+        <label for="target">Target size</label>
+        <input type="text" id="target" value="200 KB" autocomplete="off"
+               spellcheck="false" aria-describedby="echo">
+        <p id="echo" class="readout"></p>
+      </div>
+      <button id="go" disabled>Compress</button>
+    </div>
   </section>
 
-  <section id="working" hidden>
-    <p class="big" id="working-name"></p>
-    <progress id="bar" max="100" value="0"></progress>
-    <p class="small" id="working-stage">Analyse du document…</p>
-    <p class="small">Cela peut prendre quelques minutes pour un long document.</p>
+  <!-- ② working -->
+  <section id="working" class="panel" hidden>
+    <p class="filename" id="working-name"></p>
+    <div class="track" role="progressbar" aria-labelledby="working-stage">
+      <div class="fill" id="bar"></div>
+    </div>
+    <p class="readout" id="working-stage">Reading the document…</p>
   </section>
 
-  <section id="done" hidden>
-    <p class="big result" id="done-sizes"></p>
-    <a id="download" class="button" href="#">Télécharger</a>
-    <p class="small" id="done-saved"></p>
-    <button id="reveal" class="link">Ouvrir le dossier</button>
+  <!-- ③ done -->
+  <section id="done" class="panel" hidden>
+    <p class="sizes" id="done-sizes"></p>
+
+    <div class="proof" id="proof">
+      <p class="verdict" id="verdict"></p>
+      <div class="gauge" id="gauge" hidden>
+        <div class="gauge-track"><div class="gauge-fill" id="gauge-fill"></div></div>
+        <p class="readout" id="gauge-note"></p>
+      </div>
+    </div>
+
     <p class="warn" id="done-textlayer" hidden>
-      Le texte recherchable a été supprimé.
+      The searchable text layer was removed.
     </p>
-    <p class="small">Ouvrez le fichier pour le vérifier avant de l'envoyer.</p>
-    <button id="again" class="link">Réduire un autre fichier</button>
+
+    <div class="actions">
+      <a id="download" class="button" href="#">Download</a>
+      <button id="reveal" class="ghost">Open folder</button>
+    </div>
+    <p class="muted" id="done-saved"></p>
+    <p class="muted">Open the file and check it before you send it.</p>
+    <button id="again" class="ghost">Compress another file</button>
   </section>
 
-  <section id="refused" hidden>
-    <p class="big" id="refused-title"></p>
+  <!-- ④ refused -->
+  <section id="refused" class="panel refusal" hidden>
+    <p class="lead" id="refused-title"></p>
     <p id="refused-why"></p>
-    <button id="keep" hidden>Réduire quand même</button>
-    <button id="again2" class="link">Réduire un autre fichier</button>
+    <div class="actions">
+      <button id="keep" hidden>Compress to</button>
+      <button id="again2" class="ghost">Compress another file</button>
+    </div>
   </section>
 
-  <section id="failed" hidden>
-    <p class="big" id="failed-why">Ce fichier n'est pas un PDF valide.</p>
-    <button id="again3" class="link">Réduire un autre fichier</button>
+  <!-- ⑤ error -->
+  <section id="failed" class="panel refusal" hidden>
+    <p class="lead" id="failed-why">That file isn’t a readable PDF.</p>
+    <button id="again3" class="ghost">Compress another file</button>
+  </section>
+
+  <section class="claims">
+    <article>
+      <p class="value">0 uploads</p>
+      <h2>It never leaves your computer</h2>
+      <p>No server, no account, no file-size cap, no queue. The document you
+        compress is the one sitting on your disk, and it stays there.</p>
+    </article>
+    <article>
+      <p class="value">exact size</p>
+      <h2>You name the size</h2>
+      <p>Not “low, medium, high”. Type the limit the form is asking for and
+        IntactPDF stops at the best quality that fits it.</p>
+    </article>
+    <article>
+      <p class="value">120 px</p>
+      <h2>Every character is checked</h2>
+      <p>Each result is decoded again and compared with what went in. Anything
+        the size of a glyph is treated as damage, not noise.</p>
+    </article>
+  </section>
+
+  <section class="note">
+    <p><strong>Why the check exists.</strong> Compressing a scan hard enough
+      lets the encoder decide two glyphs are the same shape and store one for
+      both — turning a 6 into an 8, with nothing on screen to show it happened.
+      IntactPDF measures for precisely that, and refuses the file rather than let
+      it through.</p>
+  </section>
+
+  <section class="versus">
+    <h2>Why not just use a website?</h2>
+    <p class="standfirst">Online PDF tools are convenient and genuinely good at
+      a lot of things. Three of them they can’t do at all.</p>
+
+    <table>
+      <thead>
+        <tr><th></th><th>A PDF website</th><th>IntactPDF</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>Your document</th>
+          <td>Uploaded to someone else’s server</td>
+          <td class="win">Never leaves your computer</td>
+        </tr>
+        <tr>
+          <th>Size control</th>
+          <td>Low / medium / high — a guess</td>
+          <td class="win">The exact number the form demands</td>
+        </tr>
+        <tr>
+          <th>Text safety</th>
+          <td>No check; a changed digit looks identical</td>
+          <td class="win">Measured, and refused if it fails</td>
+        </tr>
+        <tr>
+          <th>Limits</th>
+          <td>Size caps, queues, accounts, ads</td>
+          <td class="win">None</td>
+        </tr>
+        <tr>
+          <th>Breadth</th>
+          <td class="win">Merge, split, convert, sign, OCR</td>
+          <td>Compression only</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="standfirst">The last row is theirs. If you need to merge or
+      convert, use them. If the document is a payslip, a bank statement or an
+      ID scan, uploading it to a free website is the part worth reconsidering.</p>
   </section>
 </main>
+
+<footer>
+  <p>Runs locally · <a href="https://github.com/tarektaamali/minimizePdf" rel="noopener">Source on GitHub</a></p>
+</footer>
 
 <script src="/static/app.js"></script>
 </html>

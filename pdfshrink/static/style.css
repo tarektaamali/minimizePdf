@@ -1,33 +1,321 @@
-:root { color-scheme: light; font-family: system-ui, -apple-system, sans-serif; }
-body { margin: 0; background: #f6f6f4; color: #1b1b1b; }
-main { max-width: 40rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
-h1 { font-size: 1.6rem; font-weight: 600; }
-.big { font-size: 1.35rem; margin: .4rem 0; }
-.small { font-size: .95rem; color: #5a5a5a; }
-.result { font-size: 2rem; font-weight: 600; color: #1d6f42; }
-.warn { color: #8a5b00; }
+/* Intact — a proofing instrument for documents.
+   Palette comes from print production: paper, ink, graphite, and the two
+   blues of the pressroom — proof blue for what matters, non-photo blue
+   (the pencil that deliberately doesn't survive reproduction) for the
+   gauge track. */
+
+:root {
+  --paper:    #fcfcfd;
+  --card:     #ffffff;
+  --ink:      #0c0d10;
+  --graphite: #6b7078;
+  --rule:     #e2e4e9;
+  --proof:    #1746c8;
+  --on-proof: #ffffff;
+  --nonphoto: #9fd4e8;
+  --alarm:    #b3261e;
+  --good:     #12674a;
+
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, "Cascadia Mono",
+          Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter,
+          system-ui, sans-serif;
+
+  --step: 1.5rem;
+  color-scheme: light;
+}
+
+:root:not([data-theme="light"]) {
+  @media (prefers-color-scheme: dark) { color-scheme: dark; }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:    #0d0f13;
+    --card:     #14171d;
+    --ink:      #edeff3;
+    --graphite: #949aa5;
+    --rule:     #262b34;
+    --proof:    #7ba0ff;
+    /* the accent lightens in the dark, so its text must darken with it */
+    --on-proof: #0d0f13;
+    --nonphoto: #2f4a58;
+    --alarm:    #ff8a80;
+    --good:     #5fd3a6;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- masthead ---------------------------------------------- */
+
+.masthead {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem;
+  max-width: 56rem; margin: 0 auto;
+  padding: 1.35rem 1.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.mark {
+  display: inline-flex; align-items: center; gap: .55rem;
+  font-family: var(--mono);
+  font-size: 1.05rem; font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink); text-decoration: none;
+}
+.mark em {
+  font-style: normal;
+  color: var(--proof);
+}
+.mark svg { width: 1.35rem; height: 1.35rem; fill: none; stroke: var(--proof);
+            stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+main { max-width: 56rem; margin: 0 auto; padding: 0 1.5rem 4rem; }
+
+/* ---------- lede --------------------------------------------------- */
+
+.lede { padding: 3.25rem 0 2.25rem; max-width: 34ch; }
+.lede h1 {
+  margin: 0;
+  font-size: clamp(1.9rem, 5.2vw, 2.9rem);
+  line-height: 1.12;
+  letter-spacing: -0.022em;
+  font-weight: 600;
+}
+.lede p { margin: 1rem 0 0; color: var(--graphite); max-width: 46ch; }
+
+/* ---------- panels ------------------------------------------------- */
+
+.panel {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: var(--step);
+}
+.panel.refusal { border-color: color-mix(in srgb, var(--alarm) 45%, var(--rule)); }
 
 #drop {
-  border: 3px dashed #b8b8b2; border-radius: 14px; padding: 3rem 1.5rem;
-  text-align: center; cursor: pointer; background: #fff;
+  display: grid; place-items: center; gap: .3rem;
+  border: 1.5px dashed var(--rule);
+  border-radius: 9px;
+  padding: 2.75rem 1.25rem;
+  text-align: center; cursor: pointer;
+  transition: border-color .15s, background .15s;
 }
-#drop:focus-visible, #drop.over { border-color: #1d6f42; background: #f0f8f2; }
+#drop:hover { border-color: var(--graphite); }
+#drop:focus-visible,
+#drop.over {
+  outline: none;
+  border-color: var(--proof);
+  background: color-mix(in srgb, var(--proof) 5%, transparent);
+}
+.tray { width: 2.5rem; height: 1.9rem; fill: none; stroke: var(--graphite);
+        stroke-width: 2; stroke-linejoin: round; margin-bottom: .4rem; }
+#drop.over .tray, #drop:focus-visible .tray { stroke: var(--proof); }
 
-label { display: block; margin: 1.5rem 0 .4rem; font-weight: 600; }
-input[type=text] {
-  font-size: 1.2rem; padding: .6rem .7rem; width: 9rem;
-  border: 2px solid #c4c4be; border-radius: 8px; background: #fff;
+.lead { font-size: 1.15rem; font-weight: 600; margin: 0; }
+.muted { color: var(--graphite); font-size: .93rem; margin: .35rem 0 0; }
+
+/* ---------- controls ----------------------------------------------- */
+
+.controls {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  flex-wrap: wrap; gap: 1rem;
+  margin-top: var(--step);
 }
-#echo.bad { color: #a11; }
+.field { display: grid; gap: .4rem; }
+
+label {
+  font-family: var(--mono);
+  font-size: .72rem; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--graphite);
+}
+
+input[type=text] {
+  font-family: var(--mono);
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+  width: 8.5rem;
+  padding: .55rem .7rem;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+}
+input[type=text]:focus-visible {
+  outline: 2px solid var(--proof); outline-offset: 1px; border-color: transparent;
+}
+
+.readout {
+  font-family: var(--mono);
+  font-size: .8rem; letter-spacing: .02em;
+  color: var(--graphite);
+  margin: 0; min-height: 1.2em;
+}
+.readout.bad { color: var(--alarm); }
+
+/* ---------- buttons ------------------------------------------------- */
 
 button, .button {
-  display: inline-block; margin-top: 1.4rem; padding: .85rem 1.6rem;
-  font-size: 1.15rem; font-weight: 600; border: 0; border-radius: 10px;
-  background: #1d6f42; color: #fff; cursor: pointer; text-decoration: none;
+  /* An <a> and a <button> only line up if both are told the same box. */
+  font: inherit; font-weight: 600; line-height: 1.25;
+  padding: .72rem 1.35rem;
+  border: 1px solid transparent; border-radius: 8px;
+  background: var(--proof); color: var(--on-proof);
+  cursor: pointer; text-decoration: none; display: inline-block;
 }
-button:disabled { background: #c4c4be; cursor: not-allowed; }
-.link {
-  background: none; color: #33629c; text-decoration: underline;
-  padding: .4rem 0; font-size: 1rem; font-weight: 400;
+button:disabled { background: var(--rule); color: var(--graphite); cursor: not-allowed; }
+button:not(:disabled):hover, .button:hover { filter: brightness(1.08); }
+:focus-visible { outline: 2px solid var(--proof); outline-offset: 2px; }
+
+.ghost {
+  background: none; color: var(--proof);
+  border-color: var(--rule);
+  font-weight: 500;
 }
-progress { width: 100%; height: 1.1rem; margin: 1rem 0; }
+.ghost:hover { border-color: var(--proof); filter: none; }
+
+.actions { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
+           margin-top: var(--step); }
+
+/* ---------- working -------------------------------------------------- */
+
+.filename { font-family: var(--mono); font-size: .95rem; margin: 0 0 .9rem;
+            word-break: break-all; }
+.track { height: 5px; border-radius: 3px; background: var(--rule); overflow: hidden; }
+.fill { height: 100%; width: 0; background: var(--proof); transition: width .25s ease-out; }
+#working .readout { margin-top: .75rem; }
+
+/* ---------- result --------------------------------------------------- */
+
+.sizes {
+  font-family: var(--mono);
+  font-size: clamp(1.5rem, 4.6vw, 2.1rem);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  margin: 0 0 1.1rem;
+}
+.sizes .after { color: var(--good); font-weight: 600; }
+.sizes .arrow { color: var(--graphite); margin: 0 .5rem; }
+
+/* the signature: the measurement, shown */
+.proof { border-top: 1px solid var(--rule); padding-top: 1.05rem; }
+.verdict {
+  font-family: var(--mono);
+  font-size: .78rem; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--good); margin: 0;
+}
+.gauge { margin-top: .7rem; }
+.gauge-track {
+  position: relative; height: 10px; border-radius: 2px;
+  background: var(--nonphoto);
+}
+/* the substitution threshold, marked on the scale itself */
+.gauge-track::after {
+  content: ""; position: absolute; top: -3px; bottom: -3px; right: 0;
+  width: 2px; background: var(--alarm);
+}
+.gauge-fill {
+  height: 100%; width: 0; border-radius: 2px 0 0 2px;
+  background: var(--good);
+  transition: width .7s cubic-bezier(.2, .8, .2, 1);
+}
+#gauge-note { margin-top: .5rem; }
+.warn { color: #8a5b00; font-size: .93rem; }
+@media (prefers-color-scheme: dark) { .warn { color: #e0b357; } }
+
+#done-saved { margin-top: .9rem; }
+#done .ghost:last-child { margin-top: 1.1rem; }
+
+/* ---------- claims ---------------------------------------------------- */
+
+.claims {
+  /* Explicit columns, not auto-fit: three claims must never wrap into a
+     four-cell grid and leave an empty box. */
+  display: grid; gap: 1px;
+  grid-template-columns: repeat(3, 1fr);
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 3.5rem;
+}
+.claims article { background: var(--paper); padding: 1.5rem 1.4rem; }
+.value {
+  font-family: var(--mono);
+  font-size: .78rem; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--proof); margin: 0 0 .6rem;
+}
+.claims h2 { font-size: 1.02rem; margin: 0 0 .45rem; letter-spacing: -0.01em; }
+.claims p { margin: 0; color: var(--graphite); font-size: .94rem; }
+
+.note { margin-top: 1.5rem; padding-left: 1.1rem; border-left: 2px solid var(--proof); }
+.note p { margin: 0; color: var(--graphite); max-width: 62ch; font-size: .96rem; }
+.note strong { color: var(--ink); }
+
+/* ---------- comparison ------------------------------------------------ */
+
+.versus { margin-top: 3.5rem; }
+.versus h2 { font-size: 1.4rem; letter-spacing: -0.015em; margin: 0 0 .5rem; }
+.standfirst { color: var(--graphite); max-width: 60ch; margin: 0 0 1.4rem; }
+.versus table {
+  width: 100%; border-collapse: collapse;
+  font-size: .94rem;
+}
+.versus thead th {
+  font-family: var(--mono);
+  font-size: .72rem; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--graphite); font-weight: 500;
+  text-align: left; padding: 0 .9rem .6rem 0;
+}
+.versus tbody th {
+  font-weight: 600; text-align: left; white-space: nowrap;
+  padding: .85rem .9rem .85rem 0;
+  border-top: 1px solid var(--rule);
+  vertical-align: top;
+}
+.versus td {
+  color: var(--graphite);
+  padding: .85rem .9rem .85rem 0;
+  border-top: 1px solid var(--rule);
+  vertical-align: top;
+}
+/* the column that wins a row earns the ink; the other stays grey */
+.versus td.win { color: var(--ink); font-weight: 500; }
+.versus .standfirst:last-child { margin: 1.4rem 0 0; }
+
+footer {
+  border-top: 1px solid var(--rule);
+  margin-top: 1rem;
+}
+footer p {
+  max-width: 56rem; margin: 0 auto; padding: 1.25rem 1.5rem;
+  font-family: var(--mono); font-size: .78rem; color: var(--graphite);
+}
+a { color: var(--proof); }
+
+@media (max-width: 48rem) {
+  .claims { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 34rem) {
+  .controls { align-items: stretch; }
+  .controls button { width: 100%; }
+  input[type=text] { width: 100%; }
+  .field { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

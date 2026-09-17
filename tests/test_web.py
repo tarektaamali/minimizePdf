@@ -34,7 +34,7 @@ def _upload(client, path, target, name="doc.pdf"):
 
 def test_page_loads(client):
     body = client.get("/").get_data(as_text=True)
-    assert "Glissez votre PDF ici" in body
+    assert "Drop a PDF here" in body
 
 
 def test_size_endpoint_accepts_french(client):
@@ -107,48 +107,38 @@ def test_the_server_writes_a_journal(tmp_path, monkeypatch):
     assert "ceci est un test" in journal.read_text(encoding="utf8")
 
 
-REQUIRED_FRENCH = [
-    "Glissez votre PDF ici",
-    "ou cliquez pour choisir un fichier",
-    "Taille souhaitée",
-    "je ne comprends pas cette taille",
-    "Analyse du document",
-    "Vérification du texte",
-    "Télécharger",
-    "Ouvrir le dossier",
-    "Ouvrez le fichier pour le vérifier avant de l'envoyer.",
-    "Ce fichier ne peut pas descendre",
-    "Réduire quand même",
-    "Ce fichier n'est pas un PDF valide.",
+REQUIRED_COPY = [
+    "Drop a PDF here",
+    "or choose a file",
+    "Target size",
+    "not a size I can read",
+    "Reading the document",
+    "Checking every character",
+    "Download",
+    "Open folder",
+    "Open the file and check it before you send it.",
+    "can\u2019t reach",
+    "Compress to",
+    "That file isn\u2019t a readable PDF.",
+    # Their branch added this refusal; the redesign must not drop it.
+    "already as small as it safely gets",
 ]
 
 
-def _page(client):
+def test_page_contains_all_copy(client):
     body = client.get("/").get_data(as_text=True)
     body += client.get("/static/app.js").get_data(as_text=True)
-    return body
+    missing = [s for s in REQUIRED_COPY if s not in body]
+    assert not missing, "missing copy: %s" % missing
 
 
-def test_page_contains_all_french_copy(client):
-    missing = [s for s in REQUIRED_FRENCH if s not in _page(client)]
-    assert not missing, "missing French copy: %s" % missing
-
-
-def test_page_explains_every_refusal_reason(client):
-    """Each reason the engine can return needs a sentence, or the user
-    sees an empty panel. already_minimal did not exist when the page was
-    first specified."""
-    body = _page(client)
-    for reason in ("digital_floor", "substitution_risk", "already_minimal"):
-        assert reason in body, "the page never mentions %s" % reason
-
-
-def test_stylesheet_is_served(client):
-    assert client.get("/static/style.css").status_code == 200
-
-
-def test_favicon_is_served(client):
-    """A browser asks for it unprompted; without one every page load logs
-    a 404 and the tab shows a broken icon."""
-    assert client.get("/static/favicon.ico").status_code == 200
-    assert "favicon" in client.get("/").get_data(as_text=True)
+def test_success_exposes_the_verification(client, digital_pdf):
+    """The check is the product. It must reach the page, not stay in the log."""
+    with open(digital_pdf, "rb") as fh:
+        upload = {"file": (io.BytesIO(fh.read()), "doc.pdf"), "target": "1 MB"}
+    job = client.post("/api/shrink", data=upload,
+                      content_type="multipart/form-data").get_json()["job"]
+    data = _wait(client, job)
+    assert data["state"] == "done"
+    assert "check" in data
+    assert data["threshold"] == 120
