@@ -32,6 +32,52 @@ def _page_images(page):
     return out
 
 
+def _multiply(m, n):
+    """PDF matrices are [a b 0; c d 0; e f 1]; this is m applied before n."""
+    a1, b1, c1, d1, e1, f1 = m
+    a2, b2, c2, d2, e2, f2 = n
+    return (a1 * a2 + b1 * c2, a1 * b2 + b1 * d2,
+            c1 * a2 + d1 * c2, c1 * b2 + d1 * d2,
+            e1 * a2 + f1 * c2 + e2, e1 * b2 + f1 * d2 + f2)
+
+
+def _drawn_images(page):
+    """Every image actually painted on the page, with the area it covers.
+
+    Proportions alone cannot tell a full-page scan from a photo sitting in
+    the middle of an invoice: both can be page-shaped. Only the placement
+    says which is which, so walk the content stream and measure it. An
+    image is drawn into the unit square, so the area it covers is the
+    determinant of the matrix in force when Do executes.
+    """
+    resources = page.get("/Resources", {})
+    xobjects = resources.get("/XObject", {})
+    if not xobjects:
+        return []
+    try:
+        instructions = pikepdf.parse_content_stream(page, "q Q cm Do")
+    except Exception:
+        return None                      # unparseable: caller decides
+
+    ctm, stack, drawn = (1, 0, 0, 1, 0, 0), [], []
+    for instruction in instructions:
+        operator = str(instruction.operator)
+        if operator == "q":
+            stack.append(ctm)
+        elif operator == "Q":
+            if stack:
+                ctm = stack.pop()
+        elif operator == "cm":
+            ctm = _multiply([float(v) for v in instruction.operands], ctm)
+        elif operator == "Do":
+            name = str(instruction.operands[0])
+            obj = xobjects.get(name)
+            if obj is not None and str(obj.get("/Subtype")) == "/Image":
+                a, b, c, d = ctm[0], ctm[1], ctm[2], ctm[3]
+                drawn.append((obj, abs(a * d - b * c)))
+    return drawn
+
+
 def inspect(path):
     with pikepdf.open(path) as pdf:
         pages = list(pdf.pages)
@@ -43,20 +89,23 @@ def inspect(path):
 
         widths, depths, full_page = [], set(), 0
         for page in pages:
-            images = _page_images(page)
-            if len(images) != 1:
+            drawn = _drawn_images(page)
+            if not drawn:
                 continue
-            img = images[0]
-            w, h = int(img.Width), int(img.Height)
             pw = float(page.mediabox[2]) - float(page.mediabox[0])
             ph = float(page.mediabox[3]) - float(page.mediabox[1])
-            # An image is "full page" when it resolves to within 10% of
-            # the page's own aspect and covers it; a logo never does.
-            aspect = (w / pw) / (h / ph) if pw > 0 and ph > 0 else 0
-            if 0.9 < aspect < 1.1:
-                full_page += 1
-                widths.append(w / (pw / 72.0))
-                depths.add(int(img.get("/BitsPerComponent", 8)))
+            if pw <= 0 or ph <= 0:
+                continue
+            # A scanned page is one image covering the page. Anything else -
+            # a photo in a letter, a logo, two figures side by side - is a
+            # designed document whose text must survive.
+            covering = [(o, a) for o, a in drawn if a >= 0.9 * pw * ph]
+            if len(drawn) != 1 or len(covering) != 1:
+                continue
+            img = covering[0][0]
+            full_page += 1
+            widths.append(int(img.Width) / (pw / 72.0))
+            depths.add(int(img.get("/BitsPerComponent", 8)))
 
         if full_page != n or not widths:
             return Profile(n, "digital", None, pts, has_text)

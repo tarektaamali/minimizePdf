@@ -116,3 +116,38 @@ def jbig2_pdf():
     if not path.exists():
         pytest.skip("run scripts/make_jbig2_fixture.py")
     return str(path)
+
+
+@pytest.fixture
+def mixed_pdf(tmp_path):
+    """Real text plus an embedded photo that is NOT full-page.
+
+    The photo's proportions are close to the page's, which is exactly the
+    case that fooled an aspect-ratio-only classifier into rasterising a
+    document that contains live text.
+    """
+    import numpy as np
+    pdf = pikepdf.new()
+    font = pdf.make_indirect(Dictionary(
+        Type=Name.Font, Subtype=Name.Type1, BaseFont=Name.Helvetica))
+    rng = np.random.default_rng(7)
+    for n in range(3):
+        photo = Image.fromarray(np.clip(
+            rng.normal(128, 55, (1600, 1200, 3)), 0, 255).astype(np.uint8))
+        buf = io.BytesIO()
+        photo.save(buf, format="JPEG", quality=90)
+        img = pdf.make_stream(buf.getvalue())
+        img.Type, img.Subtype = Name.XObject, Name.Image
+        img.Width, img.Height = photo.size
+        img.ColorSpace = Name.DeviceRGB
+        img.BitsPerComponent = 8
+        img.Filter = Name.DCTDecode
+        page = pdf.add_blank_page(page_size=(595, 842))
+        page.Resources = Dictionary(Font=Dictionary(F1=font),
+                                    XObject=Dictionary(Im0=img))
+        page.Contents = pdf.make_stream(
+            b"q 400 0 0 300 95 400 cm /Im0 Do Q "
+            b"BT /F1 12 Tf 95 360 Td (Invoice line for page %d) Tj ET" % n)
+    out = tmp_path / "mixed.pdf"
+    pdf.save(str(out))
+    return str(out)

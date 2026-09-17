@@ -197,3 +197,12 @@ def test_refusal_keeps_a_genuinely_useful_fallback_size(colour_scan_pdf,
     result = core.shrink(colour_scan_pdf, str(tmp_path / "o.pdf"), target=1024)
     assert result.reason == "too_large"
     assert result.best_safe_size == int(before * 0.5)
+
+
+def test_live_text_is_never_rasterised(mixed_pdf, tmp_path):
+    """The spec's hard rule: a document with real text keeps it."""
+    import pypdfium2 as pdfium
+    dst = str(tmp_path / "out.pdf")
+    shrink(mixed_pdf, dst, target=200 * 1024)
+    doc = pdfium.PdfDocument(dst)
+    assert "Invoice line" in doc[0].get_textpage().get_text_range()

@@ -81,3 +81,14 @@ def test_load_bilevel_pages_still_uses_pikepdf_when_it_can(bilevel_pdf):
     assert len(pages) == 3
     assert pages[0].shape == (1754, 1240)
     assert 0.0 < float(pages[0].mean()) < 0.5
+
+
+def test_a_photo_on_a_text_page_is_not_a_scan(mixed_pdf):
+    """An image is only a scan when it actually covers the page.
+
+    Comparing proportions alone misreads a mid-page photo as a full-page
+    scan, and rasterising that destroys the document's live text.
+    """
+    p = inspect(mixed_pdf)
+    assert p.kind == "digital"
+    assert p.has_text_layer is True
