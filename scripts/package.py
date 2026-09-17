@@ -17,13 +17,13 @@ import sys
 import zipfile
 
 ROOT = pathlib.Path(__file__).parent.parent
-FOLDER = "Réduire PDF"
+FOLDER = "IntactPDF"
 ARCHIVE = "Reduire-PDF.zip"          # no accent: the filename travels better
 
 # Exactly what he needs, and nothing else.
 FILES = [
     "Installer.bat",
-    "Réduire PDF.bat",
+    "IntactPDF.bat",
     "LISEZ-MOI.txt",
     "requirements.txt",
     "verify_install.py",

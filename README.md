@@ -1,4 +1,4 @@
-# Réduire PDF
+# IntactPDF
 
 A local web page that shrinks a PDF to a size you type, and refuses rather than
 hand back a file whose text may have been corrupted.
@@ -16,7 +16,7 @@ Unzip the folder anywhere, then:
 
 1. Double-click **`Installer.bat`** once. It takes about five minutes, needs no
    administrator rights, and ends with *« Installation terminée »*. It puts a
-   **« Réduire PDF »** icon on the Desktop.
+   **IntactPDF** icon on the Desktop.
 2. Double-click that icon. No window appears; the browser opens by itself.
 3. Drag a PDF onto the page, type the size you need, and wait. A long scan takes
    a few minutes.

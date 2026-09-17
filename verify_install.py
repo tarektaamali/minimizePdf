@@ -21,7 +21,7 @@ from pikepdf import Dictionary, Name
 
 from pdfshrink.core import HAVE_SCIPY, shrink
 
-LINE = ("Reduire PDF - verification de l'installation - 0123456789 "
+LINE = ("IntactPDF - verification de l'installation - 0123456789 "
         "ABCDEFGHIJKLM nopqrstuvwxyz")
 PAGES = 2
 

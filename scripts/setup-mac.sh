@@ -7,7 +7,7 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-echo "Installing Réduire PDF…"
+echo "Installing IntactPDF…"
 python3 -m venv .venv
 .venv/bin/pip install --upgrade pip >/dev/null
 
@@ -19,6 +19,6 @@ if command -v brew >/dev/null 2>&1 && ! command -v jbig2 >/dev/null 2>&1; then
     brew install jbig2enc || echo "jbig2enc not installed; scans will compress less."
 fi
 
-cp "scripts/Réduire PDF.command" "$HOME/Desktop/Réduire PDF.command"
-chmod +x "$HOME/Desktop/Réduire PDF.command"
-echo "Done. Double-click « Réduire PDF » on your Desktop."
+cp scripts/IntactPDF.command "$HOME/Desktop/IntactPDF.command"
+chmod +x "$HOME/Desktop/IntactPDF.command"
+echo "Done. Double-click IntactPDF on your Desktop."

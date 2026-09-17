@@ -1,4 +1,4 @@
-Réduire PDF
+IntactPDF
 ===========
 
 Première utilisation :
@@ -6,7 +6,7 @@ Première utilisation :
   « Installation terminée ».
 
 Ensuite :
-  double-cliquez sur l'icône « Réduire PDF » sur le Bureau.
+  double-cliquez sur l'icône « IntactPDF » sur le Bureau.
   Votre navigateur s'ouvre ; déposez-y votre PDF.
 
 Les fichiers réduits sont enregistrés dans le dossier

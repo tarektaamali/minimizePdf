@@ -195,7 +195,7 @@ def serve():
     url = "http://127.0.0.1:%d/" % port
     LOG.info("starting on %s", url)
     threading.Timer(1.0, lambda: webbrowser.open(url)).start()
-    print("Réduire PDF : %s" % url)
+    print("IntactPDF - %s" % url)
     create_app().run(host="127.0.0.1", port=port, threaded=True)
 
 

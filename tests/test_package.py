@@ -40,7 +40,7 @@ def test_everything_sits_inside_one_folder(built):
 
 def test_the_user_gets_what_he_needs(built):
     inside = {name.split("/", 1)[1] for name in _names(built)}
-    for needed in ("Installer.bat", "Réduire PDF.bat", "LISEZ-MOI.txt",
+    for needed in ("Installer.bat", "IntactPDF.bat", "LISEZ-MOI.txt",
                    "requirements.txt", "verify_install.py",
                    "scripts/fetch_jbig2.py", "pdfshrink/__init__.py",
                    "pdfshrink/core.py", "pdfshrink/web.py",
@@ -111,10 +111,10 @@ def test_allowlist_and_denylist_agree():
 
 def test_the_deny_list_actually_refuses():
     """Proven to fire, not merely present."""
-    for bad in ("Réduire PDF/BA2.pdf", "Réduire PDF/uv.exe",
-                "Réduire PDF/tests/test_core.py", "Réduire PDF/journal.txt",
-                "Réduire PDF/pdfshrink/__pycache__/core.pyc",
-                "Réduire PDF/jbig2/jbig2.exe"):
+    for bad in ("IntactPDF/BA2.pdf", "IntactPDF/uv.exe",
+                "IntactPDF/tests/test_core.py", "IntactPDF/journal.txt",
+                "IntactPDF/pdfshrink/__pycache__/core.pyc",
+                "IntactPDF/jbig2/jbig2.exe"):
         with pytest.raises(ValueError):
             package._check(bad)
 

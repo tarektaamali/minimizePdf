@@ -71,7 +71,7 @@ def test_readme_is_french_and_mentions_the_output_folder():
 
 @windows_only
 def test_launcher_uses_pythonw_so_no_console_appears():
-    text = (ROOT / "Réduire PDF.bat").read_text(encoding="utf8")
+    text = (ROOT / "IntactPDF.bat").read_text(encoding="utf8")
     assert "pythonw.exe" in text
     assert "python.exe" not in text.replace("pythonw.exe", "")
     assert "chcp 65001" in text
@@ -81,7 +81,7 @@ def test_launcher_uses_pythonw_so_no_console_appears():
 def test_installer_creates_a_desktop_shortcut():
     text = (ROOT / "Installer.bat").read_text(encoding="utf8")
     assert "WScript.Shell" in text
-    assert "Réduire PDF.lnk" in text
+    assert "IntactPDF.lnk" in text
     assert "GetFolderPath('Desktop')" in text
 
 
@@ -120,7 +120,7 @@ def test_batch_files_use_crlf_line_endings():
     """cmd.exe reads batch files by byte offset and loses sync on LF-only
     endings: `set` became `"APP=` and `powershell` became `ershell`. A file
     can appear to work and break as soon as an edit shifts the offsets."""
-    for name in ("Installer.bat", "Réduire PDF.bat"):
+    for name in ("Installer.bat", "IntactPDF.bat"):
         data = (ROOT / name).read_bytes()
         crlf = data.count(b"\r\n")
         lf_only = data.count(b"\n") - crlf
@@ -133,7 +133,7 @@ def test_batch_files_force_utf8_output():
     """format_size emits U+202F, which Windows' default cp1252 console
     encoding cannot represent: printing a size raises UnicodeEncodeError.
     PYTHONUTF8=1 is what stops that reaching the user."""
-    for name in ("Installer.bat", "Réduire PDF.bat"):
+    for name in ("Installer.bat", "IntactPDF.bat"):
         text = (ROOT / name).read_text(encoding="utf8")
         assert "PYTHONUTF8=1" in text, "%s does not force UTF-8" % name
 
@@ -143,7 +143,7 @@ def test_batch_files_contain_no_stray_control_characters():
     """A form feed once crept into a path here and turned
     scripts\fetch_jbig2.py into scripts<FF>etch_jbig2.py. It is invisible
     in ordinary output and the file still looks correct."""
-    for name in ("Installer.bat", "Réduire PDF.bat"):
+    for name in ("Installer.bat", "IntactPDF.bat"):
         data = (ROOT / name).read_bytes()
         stray = sorted({b for b in data if b < 0x20 and b not in (0x09, 0x0A, 0x0D)})
         assert not stray, "%s contains control bytes %s" % (

@@ -7,7 +7,7 @@ ROOT = pathlib.Path(__file__).parent.parent
 
 
 def test_launcher_is_executable_and_self_locating():
-    launcher = ROOT / "scripts" / "Réduire PDF.command"
+    launcher = ROOT / "scripts" / "IntactPDF.command"
     assert launcher.exists()
     assert launcher.stat().st_mode & stat.S_IXUSR
     text = launcher.read_text(encoding="utf8")

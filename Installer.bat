@@ -12,7 +12,7 @@ set "UV_URL=https://github.com/astral-sh/uv/releases/download/%UV_VERSION%/uv-x8
 set "UV=%APP%uv.exe"
 
 echo.
-echo   Installation de Reduire PDF
+echo   Installation de IntactPDF
 echo   ---------------------------
 echo.
 
@@ -59,8 +59,8 @@ echo   Creation du raccourci...
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "$ErrorActionPreference='Stop';" ^
   "$desk=[Environment]::GetFolderPath('Desktop');" ^
-  "$s=(New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path $desk 'Réduire PDF.lnk'));" ^
-  "$s.TargetPath='%APP%Réduire PDF.bat';" ^
+  "$s=(New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path $desk 'IntactPDF.lnk'));" ^
+  "$s.TargetPath='%APP%IntactPDF.bat';" ^
   "$s.WorkingDirectory='%APP%';" ^
   "$s.IconLocation='%APP%.venv\Scripts\pythonw.exe,0';" ^
   "$s.Description='Réduire la taille d''un PDF';" ^
