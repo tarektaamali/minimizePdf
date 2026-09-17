@@ -235,9 +235,40 @@ def _shrink_raster(src, dst, target, profile, min_dpi, progress):
 # TODO(downsample-images): the digital path only restructures losslessly, so
 # a text document carrying photos barely moves - measured 9 638 Ko -> 9 637 Ko
 # against a 200 Ko target, 48x over, because the images are left untouched.
-# This is the one place an online tool still wins outright. The missing
-# capability is downsampling and re-encoding each embedded image in place
-# while leaving the text as text.
+# This is the one place an online tool still wins outright.
+#
+# The approach, worked out but not built:
+#
+#   Shrink the images inside the document rather than rebuilding it. Walk each
+#   page's image XObjects with pikepdf, re-encode the ones above the rung's
+#   resolution, and swap the stream. Text, fonts, vectors, links and page
+#   structure are never touched, which is the whole point.
+#
+#   Size the work by placement, not pixel count: 1200 pixels drawn into a
+#   200 pt box is 432 dpi and worth halving, while the same image drawn
+#   full-page is 145 dpi and already near the floor. render._drawn_images
+#   already walks the content stream and tracks the CTM; it needs to return
+#   the placed width and height, not only the area.
+#
+#   Ladder like everywhere else - 300/q80, 200/75, 150/70, 120/65, 100/60 -
+#   stopping at the first rung that fits.
+#
+#   Touch only 8-bit DeviceRGB and DeviceGray. Leave CMYK, Indexed palettes,
+#   JPX, anything carrying an SMask, and every bilevel image exactly as they
+#   are: re-encoding those wrongly corrupts colour or transparency silently,
+#   and a version that never damages a document beats one that handles every
+#   colourspace. Skipped images keep their bytes; the file compresses less.
+#
+#   Fall back to today's lossless-only path when nothing is touchable.
+#
+#   Replacing streams in place is also what preserve-structure (encode.py)
+#   needs, so annotations and metadata survival becomes a follow-up rather
+#   than a rewrite.
+#
+#   Tests: the 9 638 Ko fixture reaches 200 Ko and keeps 'Invoice 0'
+#   selectable; a CMYK image and one with an SMask come out byte-identical;
+#   a pure-text PDF still takes the lossless path; BA2's golden run is
+#   unchanged.
 def _shrink_digital(src, dst, target, profile):
     size = lossless_save(src, dst)
     if size <= target:
